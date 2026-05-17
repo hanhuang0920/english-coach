@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>英语翻译教练 | 遗忘曲线学习</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Noto Sans', sans-serif;
+            background: linear-gradient(145deg, #f7f3ed 0%, #e8e0d5 100%);
+            min-height: 100vh;
+            padding: 40px 32px;
+            line-height: 1.55;
+            color: #3d3529;
+        }
+
+        .english-text,
+        textarea,
+        .corrected-text,
+        .review-reference,
+        .error-reference {
+            font-family: 'SF Mono', 'Monaco', 'Menlo', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.92em;
+            font-weight: 450;
+            letter-spacing: 0.01em;
+        }
+
+        .container {
+            max-width: 1480px;
+            margin: 0 auto;
+        }
+
+        /* ========== 头部 ========== */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 2.3rem;
+            font-weight: 640;
+            background: linear-gradient(135deg, #8B7E6B 0%, #B8A58A 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            color: #a69a86;
+            font-size: 0.92rem;
+        }
+
+        /* ========== Tab 切换 ========== */
+        .tabs {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: rgba(168, 154, 130, 0.12);
+            color: #8B7E6B;
+            border: none;
+            padding: 12px 34px;
+            border-radius: 60px;
+            font-size: 0.94rem;
+            font-weight: 530;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #8B7E6B;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== 练习模式的控制栏（保持不变） ========== */
+        .control-bar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 22px 34px;
+            margin-bottom: 36px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            border: 1px solid rgba(255, 252, 245, 0.8);
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #b0a084;
+            margin-bottom: 8px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 12px 18px;
+            border: 1px solid #e2d6ca;
+            border-radius: 32px;
+            font-size: 0.88rem;
+            background: white;
+        }
+
+        button {
+            background: linear-gradient(135deg, #a6977e 0%, #beb095 100%);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 60px;
+            font-size: 0.86rem;
+            font-weight: 540;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(139, 126, 107, 0.18);
+        }
+
+        /* ========== 练习模式的统计栏（保持不变） ========== */
+        .stats-bar {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 100px;
+            padding: 22px 48px;
+            margin-bottom: 40px;
+            display: flex;
+            gap: 72px;
+            justify-content: center;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255, 250, 240, 0.6);
+        }
+
+        .stat-item {
+            text-align: center;
+            min-width: 110px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 680;
+            color: #8B7E6B;
+            line-height: 1.2;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            font-weight: 520;
+            color: #aa9f8b;
+            letter-spacing: 0.6px;
+        }
+
+        /* ========== 练习模式的双栏布局（保持不变） ========== */
+        .main-panel {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .questions-panel {
+            flex: 2;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 30px;
+            max-height: 640px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 250, 240, 0.7);
+        }
+
+        .answer-panel {
+            flex: 3;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 30px;
+            border: 1px solid rgba(255, 250, 240, 0.7);
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 630;
+            color: #8B7E6B;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 2.5px solid #eee5db;
+        }
+
+        .question-item {
+            padding: 18px 22px;
+            margin-bottom: 14px;
+            border-radius: 32px;
+            background: #FDFCF9;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #eee6dd;
+        }
+
+        .question-item:hover {
+            background: white;
+            border-color: #dacfbf;
+            transform: translateX(6px);
+        }
+
+        .question-item.active {
+            background: linear-gradient(135deg, #FCF9F4 0%, #f7f1e8 100%);
+            border-color: #cebdab;
+        }
+
+        .question-item.answered {
+            background: #eff4ea;
+            border-color: #cbdbb8;
+        }
+
+        .current-question {
+            background: #FEFCF8;
+            padding: 32px;
+            border-radius: 36px;
+            margin-bottom: 28px;
+            border: 1px solid #efe5db;
+        }
+
+        .current-chinese {
+            font-size: 1.45rem;
+            font-weight: 600;
+            color: #4a3f32;
+            margin-bottom: 28px;
+            padding-left: 18px;
+            border-left: 5px solid #cfc1ad;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 18px 22px;
+            border: 1px solid #e2d6ca;
+            border-radius: 36px;
+            font-size: 0.96rem;
+            resize: vertical;
+            margin-bottom: 22px;
+            background: white;
+        }
+
+        /* ========== 批改卡片 ========== */
+        .correction-card {
+            background: white;
+            border-radius: 36px;
+            overflow: hidden;
+            border: 1px solid #efe5db;
+        }
+
+        .correction-section {
+            padding: 22px 28px;
+            border-bottom: 1px solid #f3ece3;
+        }
+
+        .section-title {
+            font-weight: 660;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title.errors { color: #cb7a65; }
+        .section-title.suggestions { color: #de9f56; }
+        .section-title.corrected { color: #6f9e6f; }
+        .section-title.knowledge { color: #6f9fbf; }
+        .section-title.score-reason { color: #8f7e64; }
+
+        .score-badge {
+            display: inline-block;
+            padding: 6px 24px;
+            border-radius: 80px;
+            font-weight: 680;
+            font-size: 1.3rem;
+        }
+
+        .score-high { background: #e9f1e5; color: #557a55; }
+        .score-low { background: #fdefea; color: #cb7a65; }
+
+        /* ========== 🆕 待复习 / 全部错题 / 已掌握 - 宽松排版 ========== */
+        .review-tab-header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 20px 32px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            border: 1px solid rgba(255, 252, 245, 0.8);
+        }
+
+        .review-count-badge {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            background: #efe5db;
+            padding: 12px 28px;
+            border-radius: 60px;
+        }
+
+        .review-count-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #8B7E6B;
+        }
+
+        .review-count-label {
+            font-size: 0.85rem;
+            color: #a69a86;
+            font-weight: 500;
+        }
+
+        .review-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* 复习卡片 - 更宽松 */
+        .review-card, .error-card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 36px;
+            padding: 28px 32px;
+            border: 1px solid #efe5db;
+            transition: all 0.2s ease;
+        }
+
+        .review-card:hover, .error-card:hover {
+            background: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+        }
+
+        .review-card-title, .error-card-title {
+            font-size: 1.15rem;
+            font-weight: 620;
+            color: #4a3f32;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #efe5db;
+        }
+
+        .review-meta, .error-meta {
+            background: #faf7f2;
+            padding: 14px 20px;
+            border-radius: 32px;
+            margin-bottom: 20px;
+            font-size: 0.82rem;
+            color: #8f806c;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .review-meta span, .error-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .review-reference-box, .error-reference-box {
+            background: #f6f0e8;
+            padding: 18px 22px;
+            border-radius: 32px;
+            margin: 18px 0;
+            font-size: 0.88rem;
+        }
+
+        .review-textarea {
+            width: 100%;
+            padding: 16px 20px;
+            border: 1px solid #e2d6ca;
+            border-radius: 32px;
+            font-size: 0.92rem;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            resize: vertical;
+            margin: 16px 0;
+            background: white;
+        }
+
+        .review-textarea:focus {
+            outline: none;
+            border-color: #cbb99f;
+            box-shadow: 0 0 0 3px rgba(184, 165, 135, 0.1);
+        }
+
+        .review-submit-btn {
+            margin-top: 8px;
+        }
+
+        .empty-state-large {
+            text-align: center;
+            padding: 80px 32px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 48px;
+            color: #b8aa94;
+            font-size: 1rem;
+        }
+
+        /* 清空按钮样式 */
+        .clear-btn {
+            background: #cb7a65;
+        }
+
+        .clear-btn:hover {
+            background: #b86955;
+            transform: translateY(-2px);
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #ede3d8;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cfc2b0;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 760px) {
+            body {
+                padding: 24px 18px;
+            }
+            .review-card, .error-card {
+                padding: 20px;
+            }
+            .review-tab-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📖 英语翻译教练</h1>
+        <p>DeepSeek AI · 遗忘曲线复习 · 7分以下收录错题本</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('practice')">📝 练习模式</button>
+        <button class="tab-btn" onclick="switchTab('due')">🔄 待复习</button>
+        <button class="tab-btn" onclick="switchTab('all')">📚 全部错题</button>
+        <button class="tab-btn" onclick="switchTab('mastered')">✅ 已掌握</button>
+    </div>
+
+    <!-- ========== 练习模式（保持不变） ========== -->
+    <div id="practiceTab" class="tab-content active">
+        <div class="control-bar">
+            <div class="control-group">
+                <label>📂 场景</label>
+                <select id="scene">
+                    <option value="基础日常">🌤️ 基础日常</option>
+                    <option value="职场通用">💼 职场通用</option>
+                    <option value="跨境电商" selected>📦 跨境电商</option>
+                    <option value="外贸实战">🌍 外贸实战</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>📝 题目数量</label>
+                <input type="number" id="count" value="8" min="3" max="15">
+            </div>
+            <button id="generateBtn">✨ 生成翻译题</button>
+            <button id="reportBtn" style="background: linear-gradient(135deg, #7b9ebd 0%, #96b3cc 100%);">📊 学习报告</button>
+        </div>
+
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item"><div class="stat-number" id="statError">0</div><div class="stat-label">待复习</div></div>
+            <div class="stat-item"><div class="stat-number" id="statAll">0</div><div class="stat-label">全部错题</div></div>
+            <div class="stat-item"><div class="stat-number" id="statMastered">0</div><div class="stat-label">已掌握</div></div>
+        </div>
+
+        <div class="main-panel">
+            <div class="questions-panel">
+                <div class="panel-title">📋 今日题目</div>
+                <div id="questionsList"><div class="empty-state">🌸 点击「生成翻译题」开始练习</div></div>
+            </div>
+            <div class="answer-panel">
+                <div class="panel-title">✍️ 答题区</div>
+                <div id="currentQuestion">
+                    <div class="current-question">
+                        <div class="current-chinese" id="currentChinese">✨ 点击左侧题目开始作答</div>
+                        <textarea class="answer-input english-text" id="answerInput" rows="3" placeholder="输入英文翻译..."></textarea>
+                        <button id="gradeBtn">🔍 智能批改</button>
+                    </div>
+                </div>
+                <div id="resultPanel" style="margin-top: 28px; display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 待复习（宽松排版） ========== -->
+    <div id="dueTab" class="tab-content">
+        <div class="review-tab-header">
+            <div class="review-count-badge">
+                <span class="review-count-number" id="dueCountNum">0</span>
+                <span class="review-count-label">道需要复习</span>
+            </div>
+            <button id="refreshDueBtn">🔄 刷新列表</button>
+        </div>
+        <div id="dueList"><div class="empty-state-large">加载中...</div></div>
+    </div>
+
+    <!-- ========== 全部错题（宽松排版） ========== -->
+    <div id="allTab" class="tab-content">
+        <div class="review-tab-header">
+            <div class="review-count-badge">
+                <span class="review-count-number" id="allCountNum">0</span>
+                <span class="review-count-label">道错题（得分&lt;7分）</span>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button id="refreshAllBtn">🔄 刷新列表</button>
+                <button id="clearAllBtn" class="clear-btn">🗑️ 清空所有错题</button>
+            </div>
+        </div>
+        <div id="allList"><div class="empty-state-large">加载中...</div></div>
+    </div>
+
+    <!-- ========== 已掌握（宽松排版） ========== -->
+    <div id="masteredTab" class="tab-content">
+        <div class="review-tab-header">
+            <div class="review-count-badge">
+                <span class="review-count-number" id="masteredCountNum">0</span>
+                <span class="review-count-label">道已掌握</span>
+            </div>
+            <button id="refreshMasteredBtn">🔄 刷新列表</button>
+        </div>
+        <div id="masteredList"><div class="empty-state-large">加载中...</div></div>
+    </div>
+</div>
+
+<script>
+    let currentQuestions = [];
+    let currentQuestionId = -1;
+
+    async function loadStats() {
+        const r = await fetch('/api/report');
+        const d = await r.json();
+        document.getElementById('statError').innerText = d.due_count || 0;
+        document.getElementById('statAll').innerText = d.error_count || 0;
+        document.getElementById('statMastered').innerText = d.mastered_count || 0;
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        if (tab === 'practice') {
+            document.getElementById('practiceTab').classList.add('active');
+            document.querySelector('.tab-btn:first-child').classList.add('active');
+        } else if (tab === 'due') {
+            document.getElementById('dueTab').classList.add('active');
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            loadDueItems();
+        } else if (tab === 'all') {
+            document.getElementById('allTab').classList.add('active');
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
+            loadAllItems();
+        } else if (tab === 'mastered') {
+            document.getElementById('masteredTab').classList.add('active');
+            document.querySelectorAll('.tab-btn')[3].classList.add('active');
+            loadMasteredItems();
+        }
+    }
+
+    // ========== 待复习 ==========
+    async function loadDueItems() {
+        const r = await fetch('/api/due_review_items');
+        const d = await r.json();
+        document.getElementById('dueCountNum').innerText = d.items.length;
+        if (d.items.length === 0) {
+            document.getElementById('dueList').innerHTML = '<div class="empty-state-large">🎉 太棒了！今天没有需要复习的错题</div>';
+            return;
+        }
+        let html = '<div class="review-grid">';
+        for (let i = 0; i < d.items.length; i++) {
+            const item = d.items[i];
+            html += `<div class="review-card" id="due-${item.id}">
+                <div class="review-card-title">${i+1}. ${escapeHtml(item.chinese)}</div>
+                <div class="review-meta">
+                    <span>📅 上次得分：${item.last_score || item.score}/10</span>
+                    <span>📖 复习次数：${item.review_count || 0}</span>
+                    <span>⏰ 下次复习：${item.next_review || '1天后'}</span>
+                </div>
+                <div class="review-reference-box english-text">💡 参考译文：${escapeHtml(item.corrected || item.reference)}</div>
+                <textarea id="due-ans-${item.id}" class="review-textarea english-text" rows="2" placeholder="输入你的翻译..."></textarea>
+                <button onclick="submitDueReview(${item.id})" class="review-submit-btn">📝 提交复习</button>
+                <div id="due-result-${item.id}" style="margin-top: 20px; display:none;"></div>
+            </div>`;
+        }
+        html += '</div>';
+        document.getElementById('dueList').innerHTML = html;
+    }
+
+    async function submitDueReview(id) {
+        const answer = document.getElementById(`due-ans-${id}`).value.trim();
+        if (!answer) { alert('请输入翻译'); return; }
+        const resultDiv = document.getElementById(`due-result-${id}`);
+        resultDiv.innerHTML = '<div class="empty-state-large" style="padding:20px;">🤖 AI批改中...</div>';
+        resultDiv.style.display = 'block';
+        const r = await fetch('/api/review_answer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, answer: answer })
+        });
+        const d = await r.json();
+        if (d.success) {
+            const c = d.correction;
+            resultDiv.innerHTML = `<div class="correction-card">
+                <div class="correction-section"><div class="section-title errors">❌ 错误点</div><div>${c.errors || '无'}</div></div>
+                <div class="correction-section"><div class="section-title suggestions">💡 优化建议</div><div>${c.suggestions || '无'}</div></div>
+                <div class="correction-section"><div class="section-title corrected">✅ 正确表达</div><div class="english-text">${c.corrected || '无'}</div></div>
+                <div class="correction-section"><div class="section-title knowledge">📖 知识点</div><div>${c.knowledge || '无'}</div></div>
+                <div class="correction-section"><div class="section-title score-reason">📝 评分理由</div><div>${c.score_reason || '无'}</div></div>
+                <div class="correction-section"><div class="section-title errors">⭐ 得分</div><div><span class="score-badge ${d.score >= 7 ? 'score-high' : 'score-low'}">${d.score}/10</span></div></div>
+            </div>`;
+            if (d.action === 'mastered') {
+                resultDiv.innerHTML += '<div style="margin-top: 16px; color:#6f9e6f;">🎉 恭喜！此题已掌握，移入已掌握库！</div>';
+            }
+            setTimeout(() => { loadDueItems(); loadStats(); loadAllItems(); loadMasteredItems(); }, 1500);
+        }
+    }
+
+    // ========== 全部错题 ==========
+    async function loadAllItems() {
+        const r = await fetch('/api/all_error_items');
+        const d = await r.json();
+        document.getElementById('allCountNum').innerText = d.items.length;
+        if (d.items.length === 0) {
+            document.getElementById('allList').innerHTML = '<div class="empty-state-large">📭 暂无错题，做几道题吧</div>';
+            return;
+        }
+        let html = '<div class="review-grid">';
+        for (let i = 0; i < d.items.length; i++) {
+            const item = d.items[i];
+            html += `<div class="error-card">
+                <div class="review-card-title">${i+1}. ${escapeHtml(item.chinese)}</div>
+                <div class="review-meta">
+                    <span>📅 得分：${item.score}/10</span>
+                    <span>📖 复习次数：${item.review_count || 0}</span>
+                    <span>⏰ 下次复习：${item.next_review || '1天后'}</span>
+                </div>
+                <div class="review-reference-box english-text">✅ 正确译文：${escapeHtml(item.corrected || item.reference)}</div>
+                <div class="review-reference-box" style="background:#fdefea; margin-top:8px;">📝 你的答案：${escapeHtml(item.user_answer || '无')}</div>
+            </div>`;
+        }
+        html += '</div>';
+        document.getElementById('allList').innerHTML = html;
+    }
+
+    // ========== 已掌握 ==========
+    async function loadMasteredItems() {
+        const r = await fetch('/api/mastered_items');
+        const d = await r.json();
+        document.getElementById('masteredCountNum').innerText = d.items.length;
+        if (d.items.length === 0) {
+            document.getElementById('masteredList').innerHTML = '<div class="empty-state-large">✅ 暂无已掌握题目</div>';
+            return;
+        }
+        let html = '<div class="review-grid">';
+        for (let i = 0; i < d.items.length; i++) {
+            const item = d.items[i];
+            html += `<div class="error-card" style="background:#f2f6ef;">
+                <div class="review-card-title">${i+1}. ${escapeHtml(item.chinese)}</div>
+                <div class="review-meta">
+                    <span>✅ 最终得分：${item.final_score || item.score}/10</span>
+                    <span>📅 掌握时间：${item.mastered_date || item.date}</span>
+                </div>
+                <div class="review-reference-box english-text">📖 正确译文：${escapeHtml(item.corrected || item.reference)}</div>
+            </div>`;
+        }
+        html += '</div>';
+        document.getElementById('masteredList').innerHTML = html;
+    }
+
+    // ========== 练习模式函数 ==========
+    async function renderQuestionsList() {
+        if (!currentQuestions.length) {
+            document.getElementById('questionsList').innerHTML = '<div class="empty-state">🌸 点击「生成翻译题」开始练习</div>';
+            return;
+        }
+        let html = '';
+        for (let i = 0; i < currentQuestions.length; i++) {
+            const q = currentQuestions[i];
+            html += `<div class="question-item ${q.answered ? 'answered' : ''}" onclick="selectQuestion(${q.id})">
+                <span class="question-number">#${q.id+1}</span> 
+                <span class="question-chinese">${escapeHtml(q.chinese)}</span>
+                ${q.answered ? '<span style="float:right;">✓</span>' : ''}
+            </div>`;
+        }
+        document.getElementById('questionsList').innerHTML = html;
+    }
+
+    window.selectQuestion = (id) => {
+        currentQuestionId = id;
+        const q = currentQuestions[id];
+        document.getElementById('currentChinese').innerText = q.chinese;
+        document.getElementById('answerInput').value = q.user_answer || '';
+        document.getElementById('resultPanel').style.display = 'none';
+        document.querySelectorAll('.question-item').forEach((el, i) => {
+            if (i === id) el.classList.add('active');
+            else el.classList.remove('active');
+        });
+    };
+
+    document.getElementById('generateBtn').onclick = async () => {
+        const scene = document.getElementById('scene').value;
+        const count = parseInt(document.getElementById('count').value);
+        document.getElementById('questionsList').innerHTML = '<div class="empty-state">🤖 生成中...</div>';
+        const r = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scene, count })
+        });
+        const d = await r.json();
+        if (d.success) {
+            currentQuestions = d.questions;
+            renderQuestionsList();
+            currentQuestionId = -1;
+            document.getElementById('currentChinese').innerText = '✨ 点击题目开始作答';
+            document.getElementById('answerInput').value = '';
+            document.getElementById('resultPanel').style.display = 'none';
+        }
+    };
+
+    document.getElementById('gradeBtn').onclick = async () => {
+        if (currentQuestionId === -1) { alert('请先选择题目'); return; }
+        const answer = document.getElementById('answerInput').value.trim();
+        if (!answer) { alert('请输入翻译'); return; }
+        const resultPanel = document.getElementById('resultPanel');
+        resultPanel.innerHTML = '<div class="empty-state">🤖 AI批改中...</div>';
+        resultPanel.style.display = 'block';
+        const r = await fetch('/api/grade', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentQuestionId, answer })
+        });
+        const d = await r.json();
+        if (d.success) {
+            const c = d.correction;
+            const score = c.score;
+            resultPanel.innerHTML = `<div class="correction-card">
+                <div class="correction-section"><div class="section-title errors">❌ 错误点</div><div>${c.errors || '无'}</div></div>
+                <div class="correction-section"><div class="section-title suggestions">💡 优化建议</div><div>${c.suggestions || '无'}</div></div>
+                <div class="correction-section"><div class="section-title corrected">✅ 正确表达</div><div class="english-text">${c.corrected || '无'}</div></div>
+                <div class="correction-section"><div class="section-title knowledge">📖 知识点</div><div>${c.knowledge || '无'}</div></div>
+                <div class="correction-section"><div class="section-title score-reason">📝 评分理由</div><div>${c.score_reason || '无'}</div></div>
+                <div class="correction-section"><div class="section-title errors">⭐ 得分</div><div><span class="score-badge ${score >= 7 ? 'score-high' : 'score-low'}">${score}/10</span></div></div>
+                <div class="correction-section"><div style="color:#9f8b72;">${c.praise || ''}</div></div>
+            </div>`;
+            if (score >= 7) {
+                resultPanel.innerHTML += '<div style="margin-top: 16px; color:#6f9e6f;">✅ 得分≥7分，未收录到错题本</div>';
+            } else {
+                resultPanel.innerHTML += '<div style="margin-top: 16px; color:#cb7a65;">📝 得分<7分，已收录到错题本，1天后复习</div>';
+            }
+            currentQuestions[currentQuestionId].answered = true;
+            currentQuestions[currentQuestionId].user_answer = answer;
+            renderQuestionsList();
+            loadStats();
+            loadAllItems();
+        }
+    };
+
+    document.getElementById('reportBtn').onclick = async () => {
+        const r = await fetch('/api/report');
+        const d = await r.json();
+        alert(`📊 学习报告\n\n待复习：${d.due_count}道\n全部错题：${d.error_count}道\n已掌握：${d.mastered_count}道`);
+        loadStats();
+    };
+
+    document.getElementById('refreshDueBtn').onclick = () => loadDueItems();
+    document.getElementById('refreshAllBtn').onclick = () => loadAllItems();
+    document.getElementById('refreshMasteredBtn').onclick = () => loadMasteredItems();
+    document.getElementById('clearAllBtn').onclick = async () => {
+        if (confirm('⚠️ 确定清空所有错题吗？此操作不可恢复！')) {
+            await fetch('/api/clear_error_items', { method: 'POST' });
+            loadAllItems();
+            loadDueItems();
+            loadStats();
+        }
+    };
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    loadStats();
+</script>
+</body>
+</html>
